@@ -1,4 +1,7 @@
-# coding=utf-8
+# Modifications Copyright 2021 by Michalis Titsias, Jiaxin Shi 
+# from https://github.com/alekdimi/arms 
+# and https://github.com/google-research/google-research/tree/master/disarm/binary
+#
 # Copyright 2021 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +26,6 @@ from datetime import datetime
 from absl import app
 from absl import flags
 from absl import logging
-from tensorflow.python.keras.utils.generic_utils import default
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
@@ -45,8 +47,7 @@ flags.DEFINE_enum('dataset', 'dynamic_mnist',
                   ['static_mnist', 'dynamic_mnist', 'continuous_mnist',
                    'fashion_mnist', 'continuous_fashion', 'omniglot', 'continuous_omniglot'],
                   'Dataset to use.')
-flags.DEFINE_string('data_dir', os.getenv('PT_DATA_DIR', './data/'), 
-                  'Directory where data is stored.')
+flags.DEFINE_string('data_dir', './data/', 'Directory where data is stored.')
 flags.DEFINE_float('genmo_lr', 1e-3, 
                    'Learning rate for decoder, Generation network.')
 flags.DEFINE_float('infnet_lr', 1e-3, 
@@ -63,7 +64,7 @@ flags.DEFINE_enum('grad_type', 'double_cv', ['disarm', 'reinforce_loo', 'double_
                   'Choice of gradient estimator.')
 flags.DEFINE_string('encoder_type', 'linear',
                     'Choice supported: linear, nonlinear')
-flags.DEFINE_string('logdir', os.getenv('PT_OUTPUT_DIR', "./logs/" + datetime.now().strftime("%Y%m%d%H%M%S")),
+flags.DEFINE_string('logdir', "./logs/" + datetime.now().strftime("%Y%m%d%H%M%S"), 
                     'Directory for storing logs.')
 flags.DEFINE_bool('verbose', False,
                   'Whether to turn on training result logging.')

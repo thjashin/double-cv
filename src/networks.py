@@ -1,4 +1,9 @@
 # coding=utf-8
+#
+# Modifications Copyright 2021 by Michalis Titsias, Jiaxin Shi
+# from https://github.com/alekdimi/arms
+# and https://github.com/google-research/google-research/tree/master/disarm/binary
+#
 # Copyright 2021 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -339,47 +344,41 @@ class DiscreteVAE(tf.keras.Model):
       #                     + (f2 - f1) * (b2 - theta))
 
     elif grad_type == "double_cv":
-      g0 = (1.0 / 3.0 )*(grad_b[1, ...] + grad_b[2, ...] + grad_b[3, ...])
-      g1 = (1.0 / 3.0 )*(grad_b[0, ...] + grad_b[2, ...] + grad_b[3, ...])
-      g2 = (1.0 / 3.0 )*(grad_b[0, ...] + grad_b[1, ...] + grad_b[3, ...])
-      g3 = (1.0 / 3.0 )*(grad_b[0, ...] + grad_b[1, ...] + grad_b[2, ...])
+      if K == 4:
+        g0 = (1.0 / 3.0 )*(grad_b[1, ...] + grad_b[2, ...] + grad_b[3, ...])
+        g1 = (1.0 / 3.0 )*(grad_b[0, ...] + grad_b[2, ...] + grad_b[3, ...])
+        g2 = (1.0 / 3.0 )*(grad_b[0, ...] + grad_b[1, ...] + grad_b[3, ...])
+        g3 = (1.0 / 3.0 )*(grad_b[0, ...] + grad_b[1, ...] + grad_b[2, ...])
 
-      b0 = self.alpha * tf.reduce_sum(g0 * (b[0, ...] - theta), axis=-1, keepdims=True)
-      b1 = self.alpha * tf.reduce_sum(g1 * (b[1, ...] - theta), axis=-1, keepdims=True)
-      b2 = self.alpha * tf.reduce_sum(g2 * (b[2, ...] - theta), axis=-1, keepdims=True)
-      b3 = self.alpha * tf.reduce_sum(g3 * (b[3, ...] - theta), axis=-1, keepdims=True)
+        b0 = self.alpha * tf.reduce_sum(g0 * (b[0, ...] - theta), axis=-1, keepdims=True)
+        b1 = self.alpha * tf.reduce_sum(g1 * (b[1, ...] - theta), axis=-1, keepdims=True)
+        b2 = self.alpha * tf.reduce_sum(g2 * (b[2, ...] - theta), axis=-1, keepdims=True)
+        b3 = self.alpha * tf.reduce_sum(g3 * (b[3, ...] - theta), axis=-1, keepdims=True)
 
-      dlog_q = b - theta
-      grad_avg = 0.25 * (grad_b[0, ...] + grad_b[1, ...] + grad_b[2, ...] + grad_b[3, ...])
-      global_corr = self.alpha * (grad_avg * theta * (1. - theta))
-      diff0 = f_b[0, :, None] + b0 - (1.0 / 3.0 )*(f_b[1, :, None] + f_b[2, :, None] + f_b[3, :, None] + b1 + b2 + b3)
-      diff1 = f_b[1, :, None] + b1 - (1.0 / 3.0 )*(f_b[0, :, None] + f_b[2, :, None] + f_b[3, :, None] + b0 + b2 + b3)
-      diff2 = f_b[2, :, None] + b2 - (1.0 / 3.0 )*(f_b[0, :, None] + f_b[1, :, None] + f_b[3, :, None] + b0 + b1 + b3)
-      diff3 = f_b[3, :, None] + b3 - (1.0 / 3.0 )*(f_b[0, :, None] + f_b[1, :, None] + f_b[2, :, None] + b0 + b1 + b2)
+        dlog_q = b - theta
+        grad_avg = 0.25 * (grad_b[0, ...] + grad_b[1, ...] + grad_b[2, ...] + grad_b[3, ...])
+        global_corr = self.alpha * (grad_avg * theta * (1. - theta))
+        diff0 = f_b[0, :, None] + b0 - (1.0 / 3.0 )*(f_b[1, :, None] + f_b[2, :, None] + f_b[3, :, None] + b1 + b2 + b3)
+        diff1 = f_b[1, :, None] + b1 - (1.0 / 3.0 )*(f_b[0, :, None] + f_b[2, :, None] + f_b[3, :, None] + b0 + b2 + b3)
+        diff2 = f_b[2, :, None] + b2 - (1.0 / 3.0 )*(f_b[0, :, None] + f_b[1, :, None] + f_b[3, :, None] + b0 + b1 + b3)
+        diff3 = f_b[3, :, None] + b3 - (1.0 / 3.0 )*(f_b[0, :, None] + f_b[1, :, None] + f_b[2, :, None] + b0 + b1 + b2)
 
-      eta_grads = 0.25*(diff0 * dlog_q[0, :] + diff1 * dlog_q[1, :] + diff2 * dlog_q[2, :] + diff3 * dlog_q[3, :]) - global_corr
-
-      # b1 = self.alpha * tf.reduce_sum(grad_b[1, ...] * (b[0, ...] - theta), axis=-1, keepdims=True) 
-      # # b2 = self.alpha * tf.reduce_sum(grad_b[0, ...] * (b[1, ...] - theta), axis=-1, keepdims=True)
-      # c1 = self.alpha * tf.reduce_sum(grad_b[0, ...] * (b[1, ...] - theta), axis=-1, keepdims=True) 
-      # # c2 = self.alpha * tf.reduce_sum(grad_b[1, ...] * (b[0, ...] - theta), axis=-1, keepdims=True)
-      # dlog_q = b - theta
-      # grad_avg = 0.5 * (grad_b[1, ...] + grad_b[0, ...])
-      # global_corr = self.alpha * (grad_avg * theta * (1. - theta)) 
-      # diffs = f_b[0, :, None] + b1 - (f_b[1, :, None] + c1)
-      # eta_grads = 0.5 * ( diffs * dlog_q[0,:] - diffs * dlog_q[1,:] ) - global_corr
+        eta_grads = 0.25*(diff0 * dlog_q[0, :] + diff1 * dlog_q[1, :] + diff2 * dlog_q[2, :] + diff3 * dlog_q[3, :]) - global_corr
+      elif K == 2:
+        b1 = self.alpha * tf.reduce_sum(grad_b[1, ...] * (b[0, ...] - theta), axis=-1, keepdims=True) 
+        # b2 = self.alpha * tf.reduce_sum(grad_b[0, ...] * (b[1, ...] - theta), axis=-1, keepdims=True)
+        c1 = self.alpha * tf.reduce_sum(grad_b[0, ...] * (b[1, ...] - theta), axis=-1, keepdims=True) 
+        # c2 = self.alpha * tf.reduce_sum(grad_b[1, ...] * (b[0, ...] - theta), axis=-1, keepdims=True)
+        dlog_q = b - theta
+        grad_avg = 0.5 * (grad_b[1, ...] + grad_b[0, ...])
+        global_corr = self.alpha * (grad_avg * theta * (1. - theta)) 
+        diffs = f_b[0, :, None] + b1 - (f_b[1, :, None] + c1)
+        eta_grads = 0.5 * ( diffs * dlog_q[0,:] - diffs * dlog_q[1,:] ) - global_corr
+      else:
+        raise NotImplementedError()
     else:
       raise NotImplementedError(f'Gradient type {grad_type} is not supported.')
     return eta_grads
-
-  def get_multilayer_uniform_sample(self, batch_shape):
-    batch_shape = tf.TensorShape(batch_shape)
-    u_noise_list = []
-    for l in range(self.num_layers):
-      full_sample_shape = batch_shape.concatenate(
-          self.encoder_list[l].output_event_shape)
-      u_noise_list.append(_sample_uniform_variables(full_sample_shape, nfold=1))
-    return u_noise_list
 
   def get_multilayer_bernoulli_sample(self, sample_list, u_noise_list=None,
                                       resampled_layer=0):
@@ -398,84 +397,6 @@ class DiscreteVAE(tf.keras.Model):
         prev_sample = self.encoder_list[l](prev_sample)[0]
         resampled.append(prev_sample)
     return resampled
-
-  def get_multilayer_grad_estimation(
-      self, sample_list, u_noise_list, grad_type=None, start_layer=0):
-    if grad_type is None:
-      grad_type = self.grad_type
-
-    # The `sample_list` contains `[x, b[1], b[2], ..., b[l]]`,
-    # where `l` is the number of layers, `self.num_layers`.
-
-    encoder_logits = self.encoder_list[start_layer].get_logits(
-        input_tensor=sample_list[start_layer])
-    sigma_phi = tf.math.sigmoid(encoder_logits)
-    u_noise = u_noise_list[start_layer]
-
-    if grad_type == 'disarm':
-      sigma_abs_phi = tf.math.sigmoid(tf.math.abs(encoder_logits))
-      b1 = tf.cast(u_noise > 1. - sigma_phi, tf.float32)
-      b2 = tf.cast(u_noise < sigma_phi, tf.float32)
-      sample_list_b1 = sample_list[:start_layer+1]
-      sample_list_b1.append(b1)
-      sample_list_b1 = self.get_multilayer_bernoulli_sample(
-          sample_list_b1, u_noise_list, resampled_layer=start_layer+1)
-      sample_list_b2 = sample_list[:start_layer+1]
-      sample_list_b2.append(b2)
-      sample_list_b2 = self.get_multilayer_bernoulli_sample(
-          sample_list_b2, u_noise_list, resampled_layer=start_layer+1)
-
-      f1 = self.get_elbo(sample_list_b1[0], sample_list_b1[1:])[:, tf.newaxis]
-      f2 = self.get_elbo(sample_list_b2[0], sample_list_b2[1:])[:, tf.newaxis]
-      # the factor is I(b1+b2=1) * (-1)**b2 * sigma(|phi|)
-      disarm_factor = ((1. - b1) * (b2) + b1 * (1. - b2)) * (-1.)**b2
-      disarm_factor *= sigma_abs_phi
-      layer_grad = 0.5 * (f1 - f2) * disarm_factor
-
-    elif grad_type == 'reinforce':
-      # REINFORCE estimator, averaged with 2 independent samples.
-      u1 = u_noise
-      u2 = _sample_uniform_variables(sample_shape=tf.shape(encoder_logits))
-      u1, u2 = tf.split(u_noise, num_or_size_splits=2, axis=0)
-      b1 = tf.cast(u1 < sigma_phi, tf.float32)
-      b2 = tf.cast(u2 < sigma_phi, tf.float32)
-      sample_list_b1 = sample_list[:start_layer+1]
-      sample_list_b1.append(b1)
-      sample_list_b1 = self.get_multilayer_bernoulli_sample(
-          sample_list_b1, u_noise_list, resampled_layer=start_layer+1)
-      sample_list_b2 = sample_list[:start_layer+1]
-      sample_list_b2.append(b2)
-      sample_list_b2 = self.get_multilayer_bernoulli_sample(
-          sample_list_b2, u_noise_list, resampled_layer=start_layer+1)
-
-      f1 = self.get_elbo(sample_list_b1[0], sample_list_b1[1:])[:, tf.newaxis]
-      f2 = self.get_elbo(sample_list_b2[0], sample_list_b2[1:])[:, tf.newaxis]
-      layer_grad = 0.5 * (f1 * (b1 - sigma_phi) + f2 * (b2 - sigma_phi))
-
-    elif grad_type == 'reinforce_loo':
-      # 2-sample REINFORCE with leave-one-out baseline.
-      u1 = u_noise
-      u2 = _sample_uniform_variables(sample_shape=tf.shape(encoder_logits))
-      b1 = tf.cast(u1 < sigma_phi, tf.float32)
-      b2 = tf.cast(u2 < sigma_phi, tf.float32)
-      sample_list_b1 = sample_list[:start_layer+1]
-      sample_list_b1.append(b1)
-      sample_list_b1 = self.get_multilayer_bernoulli_sample(
-          sample_list_b1, u_noise_list, resampled_layer=start_layer+1)
-      sample_list_b2 = sample_list[:start_layer+1]
-      sample_list_b2.append(b2)
-      sample_list_b2 = self.get_multilayer_bernoulli_sample(
-          sample_list_b2, u_noise_list, resampled_layer=start_layer+1)
-
-      f1 = self.get_elbo(sample_list_b1[0], sample_list_b1[1:])[:, tf.newaxis]
-      f2 = self.get_elbo(sample_list_b2[0], sample_list_b2[1:])[:, tf.newaxis]
-      layer_grad = 0.5 * ((f1 - f2) * (b1 - sigma_phi)
-                          + (f2 - f1) * (b2 - sigma_phi))
-
-    else:
-      raise NotImplementedError(f'Gradient type {grad_type} is not supported.')
-
-    return layer_grad
 
   def get_relax_parameters(
       self,
@@ -551,147 +472,6 @@ class DiscreteVAE(tf.keras.Model):
         [1, tf.shape(log_q)[-1]])
 
     return genmo_loss, reparam_loss, learning_signal, log_q
-
-  def get_multilayer_relax_parameters(
-      self,
-      sample_list,
-      start_layer=0,
-      temperature=None,
-      scaling_factor=None):
-
-    # the sample list contains the input and samples of hidden states
-    # [x, b[1], b[2], ..., b[l]] where l is num_layers.
-    if temperature is None:
-      temperature = tf.math.exp(self.log_temperature_variable)
-    if scaling_factor is None:
-      scaling_factor = self.scaling_variable
-    # [batch, hidden_units]
-    encoder_logits = self.encoder_list[start_layer].get_logits(
-        input_tensor=sample_list[start_layer])
-
-    # returned uniform_noise would be of the shape
-    # [batch x 2, event_dim].
-    uniform_noise = _sample_uniform_variables(
-        sample_shape=tf.shape(encoder_logits),
-        nfold=2)
-    # u_noise and v_noise are both of [batch, event_dim].
-    u_noise, v_noise = tf.split(uniform_noise, num_or_size_splits=2, axis=0)
-
-    theta = tf.math.sigmoid(encoder_logits)
-    z = encoder_logits + logit_func(u_noise)
-    b_sample = tf.cast(z > 0, tf.float32)
-
-    v_prime = (b_sample * (v_noise * theta + 1 - theta)
-               + (1 - b_sample) * v_noise * (1 - theta))
-    # z_tilde ~ p(z | b)
-    z_tilde = encoder_logits + logit_func(v_prime)
-
-    sample_list_b = sample_list[:start_layer+1]
-    sample_list_b.append(b_sample)
-    sample_list_b = self.get_multilayer_bernoulli_sample(
-        sample_list_b, resampled_layer=start_layer+1)
-
-    elbo = self.get_elbo(sample_list_b[0], sample_list_b[1:])
-    control_variate = self.get_multilayer_relax_control_variate(
-        sample_list_b, z,
-        temperature=temperature,
-        scaling_factor=scaling_factor,
-        resampled_layer_idx=start_layer+1)
-    conditional_control = self.get_multilayer_relax_control_variate(
-        sample_list_b, z_tilde,
-        temperature=temperature,
-        scaling_factor=scaling_factor,
-        resampled_layer_idx=start_layer+1)
-
-    log_q = tfd.Bernoulli(logits=encoder_logits).log_prob(b_sample)
-    return elbo, control_variate, conditional_control, log_q
-
-  def get_multilayer_relax_control_variate(
-      self,
-      sample_list,
-      z_sample,
-      temperature,
-      scaling_factor,
-      resampled_layer_idx):
-    temp_sample_list = sample_list[:resampled_layer_idx]
-    temp_sample_list.append(tf.math.sigmoid(z_sample/temperature))
-    temp_sample_list = self.get_multilayer_bernoulli_sample(
-        temp_sample_list, resampled_layer=resampled_layer_idx)
-    control_value = (
-        scaling_factor *
-        self.get_elbo(temp_sample_list[0], temp_sample_list[1:]))
-    if self.control_nn is not None:
-      # concatenate the input tensor of the ith layer, the z generated
-      # from the logits output by the ith layer. Here ith layer is labeled
-      # by resampled_layer_idx.
-      control_nn_input = tf.concat(
-          (temp_sample_list[resampled_layer_idx-1], z_sample), axis=-1)
-      control_value += (
-          scaling_factor
-          * tf.squeeze(self.control_nn[resampled_layer_idx-1](control_nn_input),
-                       axis=-1))
-    return control_value
-
-  def get_multilayer_relax_loss(
-      self,
-      input_batch,
-      temperature=None,
-      scaling_factor=None):
-    sample_list = self.multilayer_call(input_tensor=input_batch)[1]
-    # elbo, control_variate, conditional_control should be of [batch_size]
-    # log_q is of [batch_size, event_dim]
-    reparam_loss = []
-    learning_signal = []
-    log_q = []
-
-    for layer_idx in range(self.num_layers):
-      elbo_i, control_variate_i, conditional_control_i, log_q_i = (
-          self.get_multilayer_relax_parameters(
-              sample_list,
-              start_layer=layer_idx,
-              temperature=temperature,
-              scaling_factor=scaling_factor))
-      reparam_loss_i = -1. * (control_variate_i - conditional_control_i)
-      learning_signal_i = -1. * (elbo_i - conditional_control_i)
-      # [batch_size, hidden_size]
-      learning_signal_i = tf.tile(
-          tf.expand_dims(learning_signal_i, axis=-1),
-          [1, tf.shape(log_q_i)[-1]])
-
-      reparam_loss.append(reparam_loss_i)
-      learning_signal.append(learning_signal_i)
-      log_q.append(log_q_i)
-
-    # Define losses
-    genmo_loss = -1. * elbo_i
-
-    self.mean_learning_signal = tf.reduce_mean(
-        tf.concat(learning_signal, axis=0))
-
-    return genmo_loss, reparam_loss, learning_signal, log_q
-
-  def sample_binaries_with_loss(
-      self,
-      input_tensor,
-      antithetic_sample=True):
-    encoder_logits = self.encoder.get_logits(input_tensor)
-    bernoulli_prob = tf.math.sigmoid(encoder_logits)
-    # returned u_noise would be of the shape [batch x num_samples, event_dim].
-    u_noise = _sample_uniform_variables(
-        sample_shape=tf.shape(encoder_logits))
-
-    if antithetic_sample:
-      b1 = tf.cast(u_noise > 1. - bernoulli_prob, tf.float32)
-      b2 = tf.cast(u_noise < bernoulli_prob, tf.float32)
-      elbo_b1 = self.get_elbo(input_tensor, b1)
-      elbo_b2 = self.get_elbo(input_tensor, b2)
-
-      return b1, b2, elbo_b1, elbo_b2, encoder_logits
-
-    else:
-      b = tf.cast(u_noise < bernoulli_prob, tf.float32)
-      elbo = self.get_elbo(input_tensor, b)
-      return b, elbo, encoder_logits
 
   def _get_grad_variance(self, grad_variable, grad_sq_variable, grad_tensor):
     grad_variable.assign(grad_tensor)

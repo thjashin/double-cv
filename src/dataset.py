@@ -1,4 +1,9 @@
 # coding=utf-8
+#
+# Modifications Copyright 2021 by Michalis Titsias, Jiaxin Shi
+# from https://github.com/alekdimi/arms
+# and https://github.com/google-research/google-research/tree/master/disarm/binary
+#
 # Copyright 2021 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
