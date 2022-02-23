@@ -18,12 +18,14 @@ tqdm >= 4.60.0
 ```
 
 ## Usage
-Toy experiments (quadratic loss):
+### Toy experiments (quadratic loss)
 ```
 quadratic_loss.ipynb
 ```
+<img src="results/var_quad.png" width="400"><img src="results/loss_quad.png" width="420">
 
-Running VAE experiments:
+
+### VAE experiments
 ```
 python src/experiment_launcher_singlelayer.py --dataset={dataset} --genmo_lr={lr} --infnet_lr={lr} --encoder_type={net} --grad_type={grad_type} --K={K} --D=200 --seed={seed}
 ```
