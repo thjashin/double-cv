@@ -1,7 +1,7 @@
-# Double Control Variates for Gradient Estimation in Dicrete Latent Variable Models
+# Double Control Variates for Gradient Estimation
 
 Code for reproducing the experiments in 
-"Double Control Variates for Gradient Estimation in Dicrete Latent Variable Models"
+"Double Control Variates for Gradient Estimation in Dicrete Latent Variable Models" (AISTATS 2022)
 [https://arxiv.org/abs/2111.05300](https://arxiv.org/abs/2111.05300)
 
 
